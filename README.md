@@ -1,0 +1,2 @@
+# web
+Static front-end.
