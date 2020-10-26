@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>Swerve Finance | DeFi.SURF</title>
+
+  <!-- Custom fonts for this template-->
+  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+
+  <!-- Custom styles for this template-->
+  <link href="css/sb-admin-2.min.css" rel="stylesheet">
+
+  <!-- Resources -->
+<script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/themes/dark.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/plugins/rangeSelector.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+
+<!-- Bootstrap core JavaScript-->
+<script src="vendor/jquery/jquery.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript">
+  function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+</script>
+<!-- Chart code -->
+<style>
+
+.loading.line:after {
+    content: "/\A–\A\\\A|";
+    text-align: center;
+    -webkit-animation: spin 1s steps(4) infinite;
+    animation: spin 1s steps(4) infinite;
+}
+
+#durationpie {
+  width: 100%;
+  height: 300px;
+}
+
+body {
+  font-family: 'Montserrat';
+}
+
+#refs {
+  width: 100%;
+  height: 600px;
+}
+
+#refseth {
+  width: 100%;
+  height: 600px;
+}
+
+#top20 {
+  width: 100%;
+  height: 400px;
+}
+
+#radar {
+  width: 100%;
+  height: 400px;
+}
+
+#mchart {
+  width: 100%;
+  height: 400px;
+}
+
+#wchart {
+  width: 100%;
+  height: 300px;
+}
+</style>
+
+<script>
+
+WebFont.load({
+google: {
+  families: ["Montserrat:500","Montserrat:700"]
+},
+active: function() {
+  console.log("All set!");
+}
+});
+
+//start data parsing
+var json;
+var volumes;
+var topholders;
+$.when(
+$.getJSON("json/tvl_swerve.json", function(data) {
+  json = data;
+  }),
+$.getJSON("json/vol_swerve.json", function(data) {
+        volumes = data;
+    }),
+$.getJSON("json/swerve_topholders.json", function(data) {
+        topholders = data;
+    })
+).then(function() {
+var last = json[json.length - 1];
+document.getElementById("tvl").innerHTML = "$ " + numberWithCommas((last.usdt+last.usdc+last.dai+last.tusd).toFixed(0));
+am4core.ready(function() {
+
+// Themes begin
+am4core.useTheme(am4themes_animated);
+am4core.useTheme(am4themes_dark);
+// Themes end
+
+
+
+//TVL Chart
+var mchart = am4core.create("mchart", am4charts.XYChart);
+mchart.numberFormatter.numberFormat = "#a";
+mchart.numberFormatter.bigNumberPrefixes = [
+  { "number": 1e+3, "suffix": "K" },
+  { "number": 1e+6, "suffix": "M" },
+  { "number": 1e+9, "suffix": "B" }
+];
+/**var title = mchart.titles.create();
+title.text = "Swerve TVL";
+title.fontSize = 25;
+title.marginBottom = 30;**/
+var data = json;
+
+mchart.data = data;
+
+//chart.dateFormatter.inputDateFormat = "yyyy";
+//2020-09-26T20:00:00Z
+mchart.dateFormatter.inputDateFormat = "YYYY-MM-DDTHH:mm:ssZ";
+var dateAxis = mchart.xAxes.push(new am4charts.DateAxis());
+/*dateAxis.renderer.minGridDistance = 60;
+dateAxis.startLocation = 0.5;
+dateAxis.endLocation = 0.5;
+dateAxis.baseInterval = {
+  timeUnit: "year",
+  count: 1
+}*/
+dateAxis.renderer.grid.template.location = 0;
+dateAxis.renderer.ticks.template.length = 8;
+dateAxis.renderer.ticks.template.strokeOpacity = 0.1;
+dateAxis.renderer.grid.template.disabled = true;
+dateAxis.renderer.ticks.template.disabled = false;
+dateAxis.renderer.ticks.template.strokeOpacity = 0.2;
+dateAxis.renderer.minLabelPosition = 0.01;
+dateAxis.renderer.maxLabelPosition = 0.99;
+dateAxis.keepSelection = true;
+
+dateAxis.groupData = true;
+dateAxis.minZoomCount = 5;
+
+
+var valueAxis = mchart.yAxes.push(new am4charts.ValueAxis());
+//valueAxis.tooltip.disabled = true;
+
+var series = mchart.series.push(new am4charts.LineSeries());
+series.dataFields.dateX = "date";
+series.name = "USDT";
+series.dataFields.valueY = "usdt";
+series.tooltipHTML = "<span style='font-size:15px; color:#000000;'><b>USDT</b> {valueY.value.formatNumber('###,###,###,###.')} </span><img src='img/usdt.png' style='vertical-align:center; width:15px;'>";
+series.tooltipText = "[#000]{valueY.value}[/]";
+series.tooltip.background.fill = am4core.color("#FFF");
+series.tooltip.color = am4core.color("#000");
+series.tooltip.getStrokeFromObject = true;
+series.tooltip.background.strokeWidth = 3;
+series.bullets.push(new am4charts.CircleBullet());
+series.minBulletDistance = 25;
+series.tooltip.getFillFromObject = false;
+series.fillOpacity = 0.6;
+series.strokeWidth = 2;
+series.stacked = true;
+
+var series2 = mchart.series.push(new am4charts.LineSeries());
+series2.name = "USDC";
+series2.dataFields.dateX = "date";
+series2.dataFields.valueY = "usdc";
+series2.tooltipHTML = "<span style='font-size:15px; color:#000000;'><b>USDC</b> {valueY.value.formatNumber('###,###,###,###.')} </span><img src='img/usdc.png' style='vertical-align:center; width:15px;'>";
+series2.tooltipText = "[#000]{valueY.value}[/]";
+series2.tooltip.background.fill = am4core.color("#FFF");
+series2.tooltip.color = am4core.color("#000");
+series2.tooltip.getFillFromObject = false;
+series2.tooltip.getStrokeFromObject = true;
+series2.tooltip.background.strokeWidth = 3;
+series2.bullets.push(new am4charts.CircleBullet());
+series2.minBulletDistance = 25;
+series2.sequencedInterpolation = true;
+series2.fillOpacity = 0.6;
+series2.stacked = true;
+series2.strokeWidth = 2;
+
+var series3 = mchart.series.push(new am4charts.LineSeries());
+series3.name = "TUSD";
+series3.dataFields.dateX = "date";
+series3.dataFields.valueY = "tusd";
+series3.tooltipHTML = "<span style='font-size:15px; color:#000000;'><b>TUSD</b> {valueY.value.formatNumber('###,###,###,###.')} </span><img src='img/tusd.png' style='vertical-align:center; width:15px;'>";
+series3.tooltipText = "[#000]{valueY.value}[/]";
+series3.tooltip.background.fill = am4core.color("#FFF");
+series3.tooltip.color = am4core.color("#000");
+series3.tooltip.getFillFromObject = false;
+series3.tooltip.getStrokeFromObject = true;
+series3.tooltip.background.strokeWidth = 3;
+series3.bullets.push(new am4charts.CircleBullet());
+series3.minBulletDistance = 25;
+series3.sequencedInterpolation = true;
+series3.fillOpacity = 0.6;
+series3.defaultState.transitionDuration = 1000;
+series3.stacked = true;
+series3.strokeWidth = 2;
+
+var series4 = mchart.series.push(new am4charts.LineSeries());
+series4.name = "DAI";
+series4.dataFields.dateX = "date";
+series4.dataFields.valueY = "dai";
+series4.tooltipHTML = "<span style='font-size:15px; color:#000000;'><b>DAI</b> {valueY.value.formatNumber('###,###,###,###.')} </span><img src='img/dai.png' style='vertical-align:center; width:15px;'>";
+series4.tooltipText = "[#000]{valueY.value}[/]";
+series4.tooltip.background.fill = am4core.color("#FFF");
+series4.tooltip.color = am4core.color("#000");
+series4.tooltip.getFillFromObject = false;
+series4.tooltip.getStrokeFromObject = true;
+series4.tooltip.background.strokeWidth = 3;
+series4.bullets.push(new am4charts.CircleBullet());
+series4.minBulletDistance = 25;
+series4.sequencedInterpolation = true;
+series4.fillOpacity = 0.6;
+series4.defaultState.transitionDuration = 1000;
+series4.stacked = true;
+series4.strokeWidth = 2;
+
+
+
+mchart.cursor = new am4charts.XYCursor();
+mchart.cursor.xAxis = dateAxis;
+mchart.scrollbarX = new am4core.Scrollbar();
+
+// Add a legend
+mchart.legend = new am4charts.Legend();
+mchart.legend.position = "top";
+
+// axis ranges
+var range = dateAxis.axisRanges.create();
+range.date = new Date(2001, 0, 1);
+range.endDate = new Date(2003, 0, 1);
+range.axisFill.fill = mchart.colors.getIndex(7);
+range.axisFill.fillOpacity = 0.2;
+
+range.label.text = "Fines for speeding increased";
+range.label.inside = true;
+range.label.rotation = 90;
+range.label.horizontalCenter = "right";
+range.label.verticalCenter = "bottom";
+
+var range2 = dateAxis.axisRanges.create();
+range2.date = new Date(2007, 0, 1);
+range2.grid.stroke = mchart.colors.getIndex(7);
+range2.grid.strokeOpacity = 0.6;
+range2.grid.strokeDasharray = "5,2";
+
+
+range2.label.text = "Motorcycle fee introduced";
+range2.label.inside = true;
+range2.label.rotation = 90;
+range2.label.horizontalCenter = "right";
+range2.label.verticalCenter = "bottom";
+
+var scrollbarX = new am4charts.XYChartScrollbar();
+scrollbarX.series.push(series);
+scrollbarX.marginBottom = 20;
+var sbSeries = scrollbarX.scrollbarChart.series.getIndex(0);
+sbSeries.dataFields.valueYShow = undefined;
+mchart.scrollbarX = scrollbarX;
+
+// Add range selector
+//var selector = new am4plugins_rangeSelector.DateAxisRangeSelector();
+//selector.container = document.getElementById("controls");
+//selector.axis = dateAxis;
+
+
+//END TVL
+
+
+//WEEKLY
+var wchart = am4core.create("wchart", am4charts.XYChart);
+wchart.dateFormatter.inputDateFormat = "YYYY-MM-DDTHH:mm:sssZ";
+wchart.numberFormatter.numberFormat = "#a";
+wchart.numberFormatter.bigNumberPrefixes = [
+  { "number": 1e+3, "suffix": "K" },
+  { "number": 1e+6, "suffix": "M" },
+  { "number": 1e+9, "suffix": "B" }
+];
+// Add data
+wchart.data = [{
+  "date": volumes[0].date,
+  "volume": volumes[0].vol,
+  "color": wchart.colors.next()
+}, {
+  "date": volumes[1].date,
+  "volume": volumes[1].vol,
+  "color": wchart.colors.next()
+}, {
+  "date": volumes[2].date,
+  "volume": volumes[2].vol,
+  "color": wchart.colors.next()
+}, {
+  "date": volumes[3].date,
+  "volume": volumes[3].vol,
+  "color": wchart.colors.next()
+}, {
+  "date": volumes[4].date,
+  "volume": volumes[4].vol,
+  "color": wchart.colors.next()
+}, {
+  "date": volumes[5].date,
+  "volume": volumes[5].vol,
+  "color": wchart.colors.next()
+}, {
+  "date": volumes[6].date,
+  "volume": volumes[6].vol,
+  "color": wchart.colors.next()
+}];
+
+var categoryAxis = wchart.yAxes.push(new am4charts.DateAxis());
+categoryAxis.dataFields.category = "date";
+categoryAxis.renderer.inversed = true;
+categoryAxis.renderer.grid.template.location = 0;
+
+var valueAxis = wchart.xAxes.push(new am4charts.ValueAxis());
+valueAxis.renderer.minGridDistance = 50;
+valueAxis.title.text = "USD";
+valueAxis.min = 0;
+
+var columnSeries = wchart.series.push(new am4charts.ColumnSeries());
+//columnSeries.dataFields.categoryY = "date";
+columnSeries.dataFields.dateY = "date";
+columnSeries.dataFields.valueX = "volume";
+//columnSeries.dataFields.openValueX = "startTime";
+columnSeries.calculatePercent = true;
+columnSeries.columns.template.tooltipText = "[bold]{categoryY}[/]\n$ {valueX}";
+
+var columnTemplate = columnSeries.columns.template;
+columnTemplate.strokeOpacity = 0;
+columnTemplate.propertyFields.fill = "color";
+columnTemplate.height = am4core.percent(100);
+
+//TOP 20
+var topchart = am4core.create("top20", am4charts.XYChart);
+topchart.numberFormatter.numberFormat = "#a";
+topchart.numberFormatter.bigNumberPrefixes = [
+  { "number": 1e+3, "suffix": "K" },
+  { "number": 1e+6, "suffix": "M" },
+  { "number": 1e+9, "suffix": "B" }
+];
+
+topchart.data = topholders;
+
+var topcategoryAxis = topchart.xAxes.push(new am4charts.CategoryAxis());
+topcategoryAxis.renderer.grid.template.location = 0;
+topcategoryAxis.dataFields.category = "address";
+topcategoryAxis.renderer.minGridDistance = 10;
+topcategoryAxis.renderer.grid.template.location = 0.5;
+topcategoryAxis.renderer.grid.template.strokeDasharray = "1,3";
+topcategoryAxis.renderer.labels.template.rotation = -90;
+topcategoryAxis.renderer.labels.template.horizontalCenter = "left";
+topcategoryAxis.renderer.labels.template.location = 0.5;
+topcategoryAxis.renderer.labels.template.disabled = true;
+
+topcategoryAxis.renderer.labels.template.adapter.add("dx", function(dx, target) {
+    return -target.maxRight / 2;
+})
+
+var topvalueAxis = topchart.yAxes.push(new am4charts.ValueAxis());
+topvalueAxis.tooltip.disabled = true;
+topvalueAxis.renderer.ticks.template.disabled = true;
+topvalueAxis.renderer.axisFills.template.disabled = true;
+topvalueAxis.title.text = "SWRV";
+
+var topseries = topchart.series.push(new am4charts.ColumnSeries());
+topseries.dataFields.categoryX = "address";
+topseries.dataFields.valueY = "balance";
+topseries.tooltipText = "{valueY.value.formatNumber('###,###,###,###.00')} SWRV";
+topseries.sequencedInterpolation = true;
+topseries.fillOpacity = 0;
+topseries.strokeOpacity = 1;
+topseries.strokeDashArray = "1,3";
+topseries.columns.template.width = 0.01;
+topseries.tooltip.pointerOrientation = "vertical";
+
+var topbullet = topseries.bullets.create(am4charts.CircleBullet);
+
+topchart.cursor = new am4charts.XYCursor();
+
+topchart.scrollbarX = new am4core.Scrollbar();
+//topchart.scrollbarY = new am4core.Scrollbar();
+// Enable export
+topchart.exporting.menu = new am4core.ExportMenu();
+topchart.exporting.menu.align = "left";
+
+//END TOP 20
+
+
+/**
+//Distribution
+/* Create chart instance 
+
+var radar = am4core.create("radar", am4charts.XYChart);
+
+/* Create axes 
+var radarxAxis = radar.xAxes.push(new am4charts.ValueAxis());
+radarxAxis.renderer.maxLabelPosition = 0.99;
+radarxAxis.title.text = "ETH";
+
+var radaryAxis = radar.yAxes.push(new am4charts.ValueAxis());
+radaryAxis.renderer.labels.template.verticalCenter = "bottom";
+radaryAxis.renderer.labels.template.horizontalCenter = "right";
+radaryAxis.renderer.maxLabelPosition = 0.99;
+radaryAxis.renderer.labels.template.paddingBottom = 1;
+radaryAxis.renderer.labels.template.paddingRight = 3;
+radaryAxis.title.text = "Frequency (Number of Contributions)";
+
+radar.data = [
+{"investedeth":1,"frequency":122},
+{"investedeth":2,"frequency":27},
+{"investedeth":3,"frequency":22},
+{"investedeth":4,"frequency":14},
+{"investedeth":5,"frequency":25},
+{"investedeth":6,"frequency":3},
+{"investedeth":7,"frequency":12},
+{"investedeth":8,"frequency":3},
+{"investedeth":9,"frequency":4},
+{"investedeth":10,"frequency":25},
+{"investedeth":11,"frequency":1},
+{"investedeth":12,"frequency":2},
+{"investedeth":13,"frequency":1},
+{"investedeth":15,"frequency":4},
+{"investedeth":16,"frequency":1},
+{"investedeth":17,"frequency":3},
+{"investedeth":18,"frequency":2},
+{"investedeth":19,"frequency":2},
+{"investedeth":20,"frequency":16},
+{"investedeth":21,"frequency":2},
+{"investedeth":22,"frequency":1},
+{"investedeth":24,"frequency":1},
+{"investedeth":25,"frequency":5},
+{"investedeth":26,"frequency":1},
+{"investedeth":28,"frequency":1},
+{"investedeth":30,"frequency":3},
+{"investedeth":32,"frequency":2},
+{"investedeth":40,"frequency":2},
+{"investedeth":45,"frequency":1},
+{"investedeth":46,"frequency":1},
+{"investedeth":47,"frequency":1},
+{"investedeth":50,"frequency":8},
+{"investedeth":54,"frequency":1},
+{"investedeth":55,"frequency":5},
+{"investedeth":57,"frequency":1},
+{"investedeth":60,"frequency":1},
+{"investedeth":61,"frequency":1},
+{"investedeth":70,"frequency":1},
+{"investedeth":71,"frequency":1},
+{"investedeth":72,"frequency":1},
+{"investedeth":90,"frequency":1},
+{"investedeth":100,"frequency":9},
+{"investedeth":124,"frequency":1},
+{"investedeth":138,"frequency":1},
+{"investedeth":150,"frequency":3},
+{"investedeth":168,"frequency":1},
+{"investedeth":175,"frequency":1},
+{"investedeth":199,"frequency":1},
+{"investedeth":200,"frequency":5},
+{"investedeth":206,"frequency":1},
+{"investedeth":232,"frequency":1},
+{"investedeth":250,"frequency":1},
+{"investedeth":260,"frequency":1},
+{"investedeth":299,"frequency":1},
+{"investedeth":400,"frequency":1},
+{"investedeth":417,"frequency":1},
+{"investedeth":500,"frequency":3},
+{"investedeth":515,"frequency":1},
+{"investedeth":1000,"frequency":1},
+{"investedeth":1200,"frequency":1},
+{"investedeth":1500,"frequency":1},
+{"investedeth":2700,"frequency":1}]
+;
+
+// Create series
+var radarlineSeries = radar.series.push(new am4charts.LineSeries());
+radarlineSeries.dataFields.valueY = "frequency";
+radarlineSeries.dataFields.valueX = "investedeth";
+//radarlineSeries.strokeOpacity = 0;
+/**
+// Add a bullet
+var radarbullet = radarlineSeries.bullets.push(new am4charts.Bullet());
+/* Add cursor 
+radar.cursor = new am4charts.XYCursor();
+/**
+//scrollbars
+radar.scrollbarX = new am4core.Scrollbar();
+radar.scrollbarY = new am4core.Scrollbar();
+**/
+
+/**
+
+//Bar Chart Introducers vs Referrals
+var refs = am4core.create("refs", am4charts.XYChart);
+
+// Add cursor
+refs.cursor = new am4charts.XYCursor();
+
+// Add data
+refs.data = [
+{"eth":"346.12901138328016","affiliates":"46","introducer":"0x9498dB340A3ecab7Bb0973ee36e95E58C8E58a41"},
+{"eth":"2335.425100030545","affiliates":"24","introducer":"0x81042f7F99a86D3981308E72feb36BD791C31920"},
+{"eth":"4498.862789530307","affiliates":"21","introducer":"0xD8dE1f6764E442b8763d313722E9eaEe3779707E"},
+{"eth":"105.28500110656023","affiliates":"18","introducer":"0x45EE0A0db0E775AeCBebB300cCfC6486690B3287"},
+{"eth":"53.625","affiliates":"4","introducer":"0xd8068f813c45C88CEBb02cBC0F91F95626Ec9a34"},
+{"eth":"1520.050000000745","affiliates":"3","introducer":"0xE552821eE85284249C71d4aBFc4437992Ed2FB93"},
+{"eth":"198","affiliates":"3","introducer":"0x8E7fCc7A17f00f0f5f85F2D5964A581D0813c8A6"},
+{"eth":"127.9000015258789","affiliates":"3","introducer":"0x55763D6dB54736084c1B8d010Aa1d99F0DC6d07C"},
+{"eth":"57.79000077396631","affiliates":"3","introducer":"0xB98df9F7CDC3a983081CeFA1cd94AED4E936F1a9"},
+{"eth":"8.836699545383453","affiliates":"2","introducer":"0x6b5e2758bDB9eD798ACBFd64104C1deAf09CD24b"},
+{"eth":"100","affiliates":"2","introducer":"0x9F4f9E15a4A963a9a3885979Cc64B326dCAa18A8"},
+{"eth":"31.679999828338623","affiliates":"2","introducer":"0x531C2607862dE00604f600cfF6Be9cb312467570"},
+{"eth":"25","affiliates":"2","introducer":"0x1080355C93A1B4c0Dd3c340Eed4f7E514c583077"},
+{"eth":"22","affiliates":"2","introducer":"0x0013AA2FB5EC916660b38f1D53D4fC9BF8eF8A84"},
+{"eth":"20","affiliates":"1","introducer":"0x520E74218a9Fd5563855F11D204810281A833e0f"},
+{"eth":"16.399999618530273","affiliates":"1","introducer":"0xD307fF28710b7A4587200c5Ba4c67648c1F24045"},
+{"eth":"6.96999979019165","affiliates":"1","introducer":"0xF22b286fdA7369255376742f360fFCEE4e1FBD42"},
+{"eth":"5.900000095367432","affiliates":"1","introducer":"0x380566185c87aB93CA4edD474Cf6998B5fc4153e"},
+{"eth":"5","affiliates":"1","introducer":"0x27c72e4BD23C910218d8f06C4a1742E06657c874"},
+{"eth":"4.199999809265137","affiliates":"1","introducer":"0xc78a748DcCBD806ae782EB3b8590ae7d162E5A90"},
+{"eth":"0.10000000149011612","affiliates":"1","introducer":"0xa5A6D551ab33c3920848844b3Fe3b27591DF8F10"}
+];
+
+// Create axes
+var categoryAxis = refs.yAxes.push(new am4charts.CategoryAxis());
+categoryAxis.dataFields.category = "introducer";
+categoryAxis.numberFormatter.numberFormat = "#";
+categoryAxis.renderer.inversed = true;
+categoryAxis.renderer.labels.template.disabled = true;
+categoryAxis.tooltip.disabled = true;
+//categoryAxis.title.text = "Introducer";
+var  valueAxis = refs.xAxes.push(new am4charts.ValueAxis()); 
+valueAxis.title.text = "Affiliates";
+
+// Create series
+var refsseries = refs.series.push(new am4charts.ColumnSeries());
+refsseries.dataFields.valueX = "affiliates";
+refsseries.dataFields.categoryY = "introducer";
+refsseries.name = "Referrals";
+refsseries.columns.template.propertyFields.fill = "color";
+refsseries.columns.template.tooltipHTML = "<span style='font-size:14px'><b>{introducer}</b><br> {valueX} Affiliates</span>";
+
+//refs.scrollbarX = new am4core.Scrollbar();
+refs.scrollbarY = new am4core.Scrollbar();
+
+//Refs ETH
+//Bar Chart Introducers vs Referrals
+var refseth = am4core.create("refseth", am4charts.XYChart);
+
+// Add cursor
+refseth.cursor = new am4charts.XYCursor();
+// Add data
+refseth.data = [
+{"eth":"4498.86","affiliates":"21","introducer":"0xD8dE1f6764E442b8763d313722E9eaEe3779707E"},
+{"eth":"2335.42","affiliates":"24","introducer":"0x81042f7F99a86D3981308E72feb36BD791C31920"},
+{"eth":"1520.05","affiliates":"3","introducer":"0xE552821eE85284249C71d4aBFc4437992Ed2FB93"},
+{"eth":"346.12","affiliates":"46","introducer":"0x9498dB340A3ecab7Bb0973ee36e95E58C8E58a41"},
+{"eth":"198","affiliates":"3","introducer":"0x8E7fCc7A17f00f0f5f85F2D5964A581D0813c8A6"},
+{"eth":"127.90","affiliates":"3","introducer":"0x55763D6dB54736084c1B8d010Aa1d99F0DC6d07C"},
+{"eth":"105.28","affiliates":"18","introducer":"0x45EE0A0db0E775AeCBebB300cCfC6486690B3287"},
+{"eth":"100","affiliates":"2","introducer":"0x9F4f9E15a4A963a9a3885979Cc64B326dCAa18A8"},
+{"eth":"53.625","affiliates":"4","introducer":"0xd8068f813c45C88CEBb02cBC0F91F95626Ec9a34"},
+{"eth":"57.79","affiliates":"3","introducer":"0xB98df9F7CDC3a983081CeFA1cd94AED4E936F1a9"},
+{"eth":"31.67","affiliates":"2","introducer":"0x531C2607862dE00604f600cfF6Be9cb312467570"},
+{"eth":"25","affiliates":"2","introducer":"0x1080355C93A1B4c0Dd3c340Eed4f7E514c583077"},
+{"eth":"22","affiliates":"2","introducer":"0x0013AA2FB5EC916660b38f1D53D4fC9BF8eF8A84"},
+{"eth":"20","affiliates":"1","introducer":"0x520E74218a9Fd5563855F11D204810281A833e0f"},
+{"eth":"16.40","affiliates":"1","introducer":"0xD307fF28710b7A4587200c5Ba4c67648c1F24045"},
+{"eth":"8.84","affiliates":"2","introducer":"0x6b5e2758bDB9eD798ACBFd64104C1deAf09CD24b"},
+{"eth":"6.97","affiliates":"1","introducer":"0xF22b286fdA7369255376742f360fFCEE4e1FBD42"},
+{"eth":"5.90","affiliates":"1","introducer":"0x380566185c87aB93CA4edD474Cf6998B5fc4153e"},
+{"eth":"5","affiliates":"1","introducer":"0x27c72e4BD23C910218d8f06C4a1742E06657c874"},
+{"eth":"4.20","affiliates":"1","introducer":"0xc78a748DcCBD806ae782EB3b8590ae7d162E5A90"},
+{"eth":"0.10","affiliates":"1","introducer":"0xa5A6D551ab33c3920848844b3Fe3b27591DF8F10"}
+]
+;
+
+// Create axes
+var categoryAxis1 = refseth.yAxes.push(new am4charts.CategoryAxis());
+categoryAxis1.dataFields.category = "introducer";
+categoryAxis1.numberFormatter.numberFormat = "#";
+categoryAxis1.renderer.inversed = true;
+categoryAxis1.renderer.labels.template.disabled = true;
+//categoryAxis1.title.text = "Introducer";
+var  valueAxis1 = refseth.xAxes.push(new am4charts.ValueAxis()); 
+valueAxis1.title.text = "ETH";
+
+// Create series
+var refseseries = refseth.series.push(new am4charts.ColumnSeries());
+refseseries.dataFields.valueX = "eth";
+refseseries.dataFields.categoryY = "introducer";
+refseseries.name = "Referrals";
+refseseries.columns.template.propertyFields.fill = "color";
+refseseries.columns.template.tooltipHTML = "<span style='font-size:14px'><b>{valueX} ETH</b></span>";
+
+//refseth.scrollbarX = new am4core.Scrollbar();
+refseth.scrollbarY = new am4core.Scrollbar();
+**/
+//Pie Chart Distribution
+
+var chart = am4core.create("durationpie", am4charts.PieChart3D);
+chart.hiddenState.properties.opacity = 0; // this creates initial fade-in
+
+chart.legend = new am4charts.Legend();
+
+chart.data = [
+  {
+    asset: "USDT",
+    value: last.usdt
+  },
+  {
+    asset: "USDC",
+    value: last.usdc
+  },
+  {
+    asset: "TUSD",
+    value: last.tusd
+  },
+  {
+    asset: "DAI",
+    value: last.dai
+  }
+];
+
+var series = chart.series.push(new am4charts.PieSeries3D());
+series.dataFields.value = "value";
+series.dataFields.category = "asset";
+//series.ticks.template.disabled = true;
+series.labels.template.text = "{category}";
+series.slices.template.tooltipHTML = "{category}<br><span style='font-size:14px'><b>$ {value.value.formatNumber('###,###,###,###.')}</b> ({value.percent.formatNumber('##.00')}%)</span>";
+
+  }); // end am4core.ready()
+}); //end json grab
+</script>
+
+</head>
+
+<body id="page-top">
+
+  <!-- Page Wrapper -->
+  <div id="wrapper">
+
+    <!-- Sidebar -->
+    <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
+
+      <!-- Sidebar - Brand -->
+      <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+        <div class="sidebar-brand-icon">
+          <!--<i class="fas fa-laugh-wink"></i>-->
+          <img src="img/SwerveSurf.png" width="100%">
+        </div>
+        <!--<div class="sidebar-brand-text mx-3"><sup>DeFI</sup></div>-->
+      </a>
+
+      <!-- Divider -->
+      <hr class="sidebar-divider my-0">
+
+      <!-- Nav Item - Dashboard -->
+      <!--<li class="nav-item active">
+        <a class="nav-link" href="index.html">
+          <i class="fas fa-fw fa-tachometer-alt"></i>
+          <span>Dashboard</span></a>
+      </li>-->
+
+      <!-- Divider -->
+      <hr class="sidebar-divider">
+
+      <!-- Heading -->
+      <div class="sidebar-heading">
+        Stats
+      </div>
+
+
+            <!-- Nav Item - Pools Collapse Menu -->
+      <li class="nav-item active">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo1" aria-expanded="true" aria-controls="collapseTwo1">
+          <i class="fas fa-fw fa-chart-line"></i>
+          <span>Dashboard</span>
+        </a>
+        <div id="collapseTwo1" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+          <div class="bg-dark py-2 collapse-inner rounded">
+            <h6 class="collapse-header"><!--Select Pool:--></h6>
+            <a class="collapse-item" href="#">Stats</a>
+            <a class="collapse-item" href="browse.html">Browse</a>
+          </div>
+        </div>
+      </li>
+
+                  <!-- Nav Item - Pools Collapse Menu -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo3" aria-expanded="true" aria-controls="collapseTwo3">
+          <i class="fas fa-fw fa-lock"></i>
+          <span>Vote-Locking</span>
+        </a>
+        <div id="collapseTwo3" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+          <div class="bg-dark py-2 collapse-inner rounded">
+            <h6 class="collapse-header"><!--Select Pool:--></h6>
+            <a class="collapse-item" href="locks.html">Stats</a>
+          </div>
+        </div>
+      </li>
+
+      <!-- Divider -->
+      <hr class="sidebar-divider">
+
+      <!-- Heading -->
+      <div class="sidebar-heading">
+        Resources
+      </div>
+
+      <!-- Nav Item - Pages Collapse Menu -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages" aria-expanded="true" aria-controls="collapsePages">
+          <i class="fas fa-fw fa-folder"></i>
+          <span>Official Links</span>
+        </a>
+        <div id="collapsePages" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
+          <div class="bg-dark py-2 collapse-inner rounded">
+            <!--<h6 class="collapse-header">Login Screens:</h6>-->
+            <a class="collapse-item" href="https://swerve.fi" target="_blank">Website</a>
+            <a class="collapse-item" href="https://gov.swerve.community/" target="_blank">Forum</a>
+            <a class="collapse-item" href="https://snapshot.page/#/swerve" target="_blank">Snapshot Voting</a>
+            <a class="collapse-item" href="https://github.com/SwerveFinance" target="_blank">GitHub</a>
+           
+            <div class="collapse-divider"></div>
+            <h6 class="collapse-header">Social</h6>
+            <a class="collapse-item" href="https://discord.gg/vkhw8Av" target="_blank">Discord</a>
+            <a class="collapse-item" href="https://t.me/swervefi" target="_blank">Telegram</a>
+            <a class="collapse-item" href="https://twitter.com/SwerveFinance" target="_blank">Twitter</a>
+
+            <div class="collapse-divider"></div>
+            <h6 class="collapse-header">Trade</h6>
+            <a class="collapse-item" href="https://uniswap.info/token/0xb8baa0e4287890a5f79863ab62b7f175cecbd433" target="_blank">Uniswap</a>
+            <a class="collapse-item" href="https://balancer.exchange/#/swap/0xb8baa0e4287890a5f79863ab62b7f175cecbd433" target="_blank">Balancer</a>
+            <a class="collapse-item" href="https://www.huobi.com/en-us/exchange/?s=swrv_usdt" target="_blank">Huobi</a>
+            <a class="collapse-item" href="https://www.bithumb.pro/en-us/exchange/professional?q=SWRV-USDT" target="_blank">Bitthumb</a>
+            <a class="collapse-item" href="https://www.okex.com/markets/spot?product=swrv_usdt" target="_blank">OkEx</a>
+            <a class="collapse-item" href="https://www.binance.com/en/trade/SWRV_BUSD?layout=pro" target="_blank">Binance</a>
+
+          </div>
+        </div>
+      </li>
+
+
+      <!-- Nav Item - Tables 
+      <li class="nav-item">
+        <a class="nav-link" href="tables.html">
+          <i class="fas fa-fw fa-table"></i>
+          <span>Tables</span></a>
+      </li>-->
+
+      <!-- Divider -->
+      <hr class="sidebar-divider d-none d-md-block">
+
+      <!-- Sidebar Toggler (Sidebar) -->
+      <div class="text-center d-none d-md-inline">
+        <button class="rounded-circle border-0" id="sidebarToggle"></button>
+      </div>
+
+    </ul>
+    <!-- End of Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+      <!-- Main Content -->
+      <div id="content">
+
+        <!-- Topbar -->
+        <nav class="navbar navbar-expand navbar-light bg-dark topbar mb-4 static-top shadow" style="background-color: #141718 !important;">
+
+          <!-- Sidebar Toggle (Topbar) -->
+          <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+            <i class="fa fa-bars"></i>
+          </button>
+
+          <!-- Topbar Search 
+          <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+            <div class="input-group">
+              <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2">
+              <div class="input-group-append">
+                <button class="btn btn-primary" type="button">
+                  <i class="fas fa-search fa-sm"></i>
+                </button>
+              </div>
+            </div>
+          </form>-->
+
+          <!-- Topbar Navbar -->
+          <ul class="navbar-nav ml-auto">
+
+            <!-- Nav Item - Search Dropdown (Visible Only XS) -->
+            <li class="nav-item dropdown no-arrow d-sm-none">
+              <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-search fa-fw"></i>
+              </a>
+              <!-- Dropdown - Messages -->
+              <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in" aria-labelledby="searchDropdown">
+                <form class="form-inline mr-auto w-100 navbar-search">
+                  <div class="input-group">
+                    <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2">
+                    <div class="input-group-append">
+                      <button class="btn btn-primary" type="button">
+                        <i class="fas fa-search fa-sm"></i>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </li>
+
+            <!-- Nav Item - Alerts
+            <li class="nav-item dropdown no-arrow mx-1">
+              <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-bell fa-fw"></i>
+                 Counter - Alerts 
+                <span class="badge badge-danger badge-counter">3+</span>
+              </a>
+               Dropdown - Alerts 
+              <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="alertsDropdown">
+                <h6 class="dropdown-header">
+                  Alerts Center
+                </h6>
+                <a class="dropdown-item d-flex align-items-center" href="#">
+                  <div class="mr-3">
+                    <div class="icon-circle bg-primary">
+                      <i class="fas fa-file-alt text-white"></i>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="small text-gray-500">December 12, 2019</div>
+                    <span class="font-weight-bold">A new monthly report is ready to download!</span>
+                  </div>
+                </a>
+                <a class="dropdown-item d-flex align-items-center" href="#">
+                  <div class="mr-3">
+                    <div class="icon-circle bg-success">
+                      <i class="fas fa-donate text-white"></i>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="small text-gray-500">December 7, 2019</div>
+                    $290.29 has been deposited into your account!
+                  </div>
+                </a>
+                <a class="dropdown-item d-flex align-items-center" href="#">
+                  <div class="mr-3">
+                    <div class="icon-circle bg-warning">
+                      <i class="fas fa-exclamation-triangle text-white"></i>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="small text-gray-500">December 2, 2019</div>
+                    Spending Alert: We've noticed unusually high spending for your account.
+                  </div>
+                </a>
+                <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+              </div>
+            </li>-->
+
+            <!-- Nav Item - Balances -->
+            <li class="nav-item dropdown no-arrow">
+              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <img class="img-profile rounded-circle" src="img/swrv_32.png" style="display: none;" id="swrvimg">
+                <span class="mr-2 d-none d-lg-inline text-gray-600 small" id="swrv"></span>
+              </a>
+            </li>
+
+            <li class="nav-item dropdown no-arrow">
+              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <!--<img class="img-profile rounded-circle" src="img/swrv_32.png">-->
+                <span class="mr-2 d-none d-lg-inline text-gray-600 small" id="swusd"></span>
+              </a>
+            </li>
+
+            <li class="nav-item dropdown no-arrow">
+              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <!--<img class="img-profile rounded-circle" src="img/swrv_32.png">-->
+                <span class="mr-2 d-none d-lg-inline text-gray-600 small" id="veswrv"></span>
+              </a>
+            </li>
+
+
+            <div class="topbar-divider d-none d-sm-block"></div>
+
+            <!-- Nav Item - User Information -->
+            <li class="nav-item dropdown no-arrow">
+              <a class="nav-link dropdown-toggle" href="#" id="loggedoutdrop" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="mr-2 d-none d-lg-inline text-gray-600 small" id="walletaddr">Not Connected</span>
+                <!--<img class="img-profile rounded-circle" src="https://source.unsplash.com/QAB-WJcbgJk/60x60">-->
+                 <i class="fas fa-wallet text-gray-300"></i>
+              </a>
+              <!-- Dropdown - User Logged In
+              <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" id="loggedin" aria-labelledby="loggedindrop">
+                <a class="dropdown-item" href="#">
+                  <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                  View on Etherscan
+                </a>
+                <a class="dropdown-item" href="#">
+                  <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                  Settings
+                </a>
+                <a class="dropdown-item" href="#">
+                  <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
+                  Change Wallet
+                </a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                  <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                  Disconnect
+                </a>
+              </div>--> 
+            </li>
+          </ul>
+
+        </nav>
+        <!-- End of Topbar -->
+
+<!-- Twitter <a href="https://twitter.com/intent/tweet?screen_name=98farhan94&ref_src=twsrc%5Etfw" class="twitter-mention-button" data-show-count="false">Tweet to @98farhan94</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>-->
+        <!-- Begin Page Content -->
+        <div class="container-fluid">
+
+          <!-- Page Heading -->
+          <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-warning">Overview</h1>
+            <a href="#" onclick="connectwallet();" class="d-none d-sm-inline-block btn btn-sm btn-warning shadow-sm" id="notconnected"><i class="fas fa-plug fa-sm text-dark"></i> &nbsp;<span class="text-dark">Connect Wallet</span></a>
+            <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm" id="connected" style="display:none !important;"><i class="fas fa-check-circle fa-sm text-dark"></i> &nbsp;<span class="text-dark">Connected</span></a>
+          </div>
+
+          <!-- Content Row -->
+          <div class="row">
+
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card bg-dark border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">TVL</div>
+                      <div class="h5 mb-0 font-weight-bold text-white" id="tvl">0</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-funnel-dollar fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card bg-dark border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Price</div>
+                      <div class="h5 mb-0 font-weight-bold text-white" id="price">0</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card bg-dark border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-info text-uppercase mb-1">24h Volume</div>
+                      <div class="row no-gutters align-items-center">
+                        <div class="col-auto">
+                          <div class="h5 mb-0 mr-3 font-weight-bold text-white" id="volume">0</div>
+                        </div>
+                        <div class="col">
+                        <!--  <div class="progress progress-sm mr-2">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                          </div>-->
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pending Requests Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card bg-dark border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Market Cap</div>
+                      <div class="h5 mb-0 font-weight-bold text-white" id="marketcap">0</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-coins fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content Row -->
+
+          <div class="row">
+
+            <!-- Area Chart -->
+            <div class="col-xl-12 col-lg-7">
+              <div class="card bg-dark shadow mb-4">
+                <!-- Card Header - Dropdown -->
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                  <h6 class="m-0 font-weight-bold text-warning">Total Value Locked</h6>
+                  <!--<div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                      <div class="dropdown-header">Dropdown Header:</div>
+                      <a class="dropdown-item" href="#">Action</a>
+                      <a class="dropdown-item" href="#">Another action</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#">Something else here</a>
+                    </div>
+                  </div>-->
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                  <div id="controls"></div>
+                    <div id="mchart"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content Row -->
+          <div class="row">
+
+            <!-- Content Column -->
+            <div class="col-lg-6 mb-4">
+
+              <!-- Project Card Example -->
+              <div class="card bg-dark shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-warning">Assets</h6>
+                </div>
+                <div class="card-body">
+                  <div id="durationpie"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+
+              <!-- Illustrations -->
+              <div class="card bg-dark shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-warning">Volume (Last 7 Days)</h6>
+                </div>
+                <div class="card-body">
+                    <div id="wchart"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+                    <!-- Content Row -->
+          <div class="row">
+
+            <!-- Content Column -->
+            <div class="col-xl-12 col-lg-7">
+
+              <!-- Project Card Example -->
+              <div class="card bg-dark shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-warning">SWRV Holders (Top 100)</h6>
+                </div>
+                <div class="card-body">
+                  <div id="top20"></div>
+                </div>
+              </div>
+            </div>
+
+            <!--<div class="col-lg-6 mb-4">
+
+               Illustrations 
+              <div class="card bg-dark shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-warning">Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div id="radar"></div>
+                </div>
+              </div>
+            </div>-->
+          </div>
+
+                    <!-- Content Row -->
+            <!-- Page Heading -->
+      <!--<div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h2 class="h3 mb-0 text-light">Introducers</h2>
+
+            </div>
+          <div class="row">
+
+            Content Column 
+            <div class="col-lg-6 mb-4">-->
+
+              <!-- Project Card Example 
+              <div class="card bg-dark shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-warning">Number of Affiliates</h6>
+                </div>
+                <div class="card-body">
+                  <div id="refs"></div>
+                </div>
+              </div>
+        </div>
+
+               <div class="col-lg-6 mb-4">-->
+
+              <!-- Illustrations 
+              <div class="card bg-dark shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-warning">Amount of ETH Referred</h6>
+                </div>
+                <div class="card-body">
+                  <div id="refseth"></div>
+                </div>
+              </div>
+            </div>
+
+      </div>-->
+      <!-- End of Main Content -->
+
+      <!-- Footer -->
+      <footer class="sticky-footer bg-dark">
+        <div class="container my-auto">
+          <div class="copyright text-center my-auto">
+            <span>Copyright &copy; 2020 DeFi.SURF</span>
+          </div>
+        </div>
+      </footer>
+      <!-- End of Footer -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+  </div>
+  <!-- End of Page Wrapper -->
+
+  <!-- Scroll to Top Button-->
+  <a class="scroll-to-top rounded" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+  </a>
+
+  <!-- Logout Modal-->
+  <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+          <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+          <a class="btn btn-primary" href="login.html">Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Core plugin JavaScript-->
+  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+  <!-- Custom scripts for all pages-->
+  <script src="js/sb-admin-2.min.js"></script>
+  <script src="js/web3.min.js"></script>
+  <script src="js/web3modal.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/evm-chains/lib/index.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/@walletconnect/web3-provider@1.2.1/dist/umd/index.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/fortmatic@2.0.6/dist/fortmatic.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/ethavatar/dist/index.js"></script>
+  <script type="text/javascript">
+    async function connectwallet(){
+    const Web3Modal = window.Web3Modal.default;
+    const WalletConnectProvider = window.WalletConnectProvider.default;
+    const EvmChains = window.EvmChains;
+    const Fortmatic = window.Fortmatic;
+    const providerOptions = {
+    /* See Provider Options Section */
+    walletconnect: {
+      package: WalletConnectProvider,
+      options: {
+        // Mikko's test key - don't copy as your mileage may vary
+        infuraId: "8043bb2cf99347b1bfadfb233c5325c0",
+      }
+    },
+
+    fortmatic: {
+      package: Fortmatic,
+      options: {
+        key: "pk_live_7F67A9DFADF7B921"
+      }
+    }
+    };
+
+    const web3Modal = new Web3Modal({
+    network: "mainnet", // optional
+    cacheProvider: true, // optional
+    providerOptions, // required
+    theme: "dark"
+    });
+
+    const provider = await web3Modal.connect();
+    const web3 = new Web3(provider);
+    console.log("Web3 instance is", web3);
+
+    //account setup
+    let selectedAccount;
+      // Get connected chain id from Ethereum node
+    const chainId = await web3.eth.getChainId();
+    // Load chain information over an HTTP API
+    const chainData = await EvmChains.getChain(chainId);
+    //document.querySelector("#network-name").textContent = chainData.name;
+
+    // Get list of accounts of the connected wallet
+    const accounts = await web3.eth.getAccounts();
+
+    // MetaMask does not give you all accounts, only the selected account
+    console.log("Got accounts", accounts);
+    selectedAccount = accounts[0];
+    document.getElementById("walletaddr").innerHTML = "<span class='text-warning'>" + selectedAccount + "</span>";
+
+    //get balances
+    let swrv = "0xB8BAa0e4287890a5F79863aB62b7F175ceCbD433";
+    let swusd = "0x77C6E4a580c0dCE4E5c7a17d0bc077188a83A059";
+    let veswrv = "0xe5e7ddadd563018b0e692c1524b60b754fbd7f02";
+
+    // The minimum ABI to get ERC20 Token balance
+    let minABI = [
+      // balanceOf
+      {
+        "constant":true,
+        "inputs":[{"name":"_owner","type":"address"}],
+        "name":"balanceOf",
+        "outputs":[{"name":"balance","type":"uint256"}],
+        "type":"function"
+      },
+      // decimals
+      {
+        "constant":true,
+        "inputs":[],
+        "name":"decimals",
+        "outputs":[{"name":"","type":"uint8"}],
+        "type":"function"
+      }
+    ];
+
+    let contract = new web3.eth.Contract(minABI,swrv);
+    async function getBalance(c) {
+      contract.options.address = c;
+      balance = await contract.methods.balanceOf(selectedAccount).call();
+      return balance;
+    }
+
+    getBalance(swrv).then(function (result) {
+    document.getElementById("swrv").innerHTML = ": <span class='text-white'>" + numberWithCommas((result/1000000000000000000).toFixed(2)) + "</span>";
+    document.querySelector("#swrvimg").style.display = "block";
+    document.querySelector("#connected").style.display = "block";
+    document.querySelector("#notconnected").style.position = "absolute";
+    document.querySelector("#notconnected").style.top = "-1000px";
+    console.log("SWRV " + result);
+    });
+
+    getBalance(swusd).then(function (result) {
+    document.getElementById("swusd").innerHTML = "swUSD: <span class='text-white'>" + numberWithCommas((result/1000000000000000000).toFixed(2)) + "</span>";
+    console.log("swUSD " + result);
+    });
+
+    getBalance(veswrv).then(function (result) {
+    document.getElementById("veswrv").innerHTML = "veSWRV: <span class='text-white'>" + numberWithCommas((result/1000000000000000000).toFixed(2)) + "</span>";
+    console.log("veSWRV " + result);
+    });
+
+    }
+  </script>
+
+  <script type="text/javascript">
+  $.getJSON("json/swerve_cg.json", function(json) {
+    console.log(json); // this will show the info it in firebug console
+    if(json.usd_24h_change>0){
+    document.getElementById("price").innerHTML = "$ " + json.usd + " <span class='text-success' style='font-weight:normal;'><i class='fas fa-chevron-circle-up'></i> "+ json.usd_24h_change.toFixed(2) + "%</span>";  
+    }
+    else{
+    document.getElementById("price").innerHTML = "$ " + json.usd + " <span class='text-dark' style='font-weight:normal;'><i class='fas fa-chevron-circle-down'></i> "+ json.usd_24h_change.toFixed(2) + "%</span>"; 
+    
+    }
+    document.getElementById("volume").innerHTML = "$ " + numberWithCommas(json.usd_24h_vol.toFixed(0));
+    document.getElementById("marketcap").innerHTML = "$ " + numberWithCommas(json.usd_market_cap.toFixed(0));
+});
+</script>
+
+  <!-- Page level plugins -->
+  <!--  <script src="vendor/chart.js/Chart.min.js"></script>-->
+
+  <!-- Page level custom scripts -->
+  <script>
+    //http://pushservice.curve.fi/pools
+  </script>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-4795921-11"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-4795921-11');
+</script>
+
+
+</body>
+
+</html>
